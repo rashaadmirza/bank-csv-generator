@@ -1,0 +1,8 @@
+*.xlsx
+*.xls
+*.csv
+myenv/
+__pycache__/
+*.pyc
+config.py
+.streamlit/secrets.toml
