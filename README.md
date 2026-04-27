@@ -2,6 +2,8 @@
 
 A simple tool that converts an Employee Salaries Excel file into a bank salary transfer CSV file. Available as both a desktop app and a web app.
 
+For questions or support, contact: [mirza.ra@northeastern.edu](mailto:mirza.ra@northeastern.edu)
+
 ---
 
 ## What It Does
