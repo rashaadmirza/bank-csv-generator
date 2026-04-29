@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank CSV Generator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 420px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 22px;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+
+        .upload-area {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            border: 2px dashed #0078D4;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            background: white;
+            font: inherit;
+            color: inherit;
+        }
+
+        .upload-area:hover { background: #f0f7ff; }
+
+        .upload-area .upload-label {
+            color: #0078D4;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        #file-name {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #444;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #0078D4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background: #005fa3; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+
+        #status {
+            margin-top: 16px;
+            font-size: 13px;
+            color: #444;
+        }
+
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Bank CSV Generator</h1>
+        <p>Upload the Employee Salaries Excel file to generate the Bank CSV.</p>
+
+        <form id="upload-form">
+            <input type="file" id="file-input" accept=".xlsx,.xls" hidden>
+            <button type="button" class="upload-area" onclick="document.getElementById('file-input').click()">
+                <span class="upload-label">Click to browse Excel file</span>
+                <div id="file-name">No file selected</div>
+            </button>
+
+            <button type="submit" id="generate-btn" disabled>Generate Bank CSV</button>
+        </form>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById("file-input");
+        const fileName = document.getElementById("file-name");
+        const generateBtn = document.getElementById("generate-btn");
+        const status = document.getElementById("status");
+        const form = document.getElementById("upload-form");
+
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length > 0) {
+                fileName.textContent = fileInput.files[0].name;
+                generateBtn.disabled = false;
+                status.textContent = "";
+            }
+        });
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            if (!fileInput.files.length) return;
+
+            generateBtn.disabled = true;
+            status.textContent = "Processing...";
+            status.className = "";
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                const response = await fetch("/upload", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const disposition = response.headers.get("Content-Disposition");
+                    const nameMatch = disposition && disposition.match(/filename="?([^"]+)"?/);
+                    const downloadName = nameMatch ? nameMatch[1] : "output_Bank.csv";
+
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = downloadName;
+                    a.click();
+                    URL.revokeObjectURL(url);
+
+                    status.textContent = "Done! Your file has been downloaded.";
+                } else {
+                    const error = await response.text();
+                    status.textContent = error;
+                    status.className = "error";
+                }
+            } catch (err) {
+                console.error(err);
+                status.textContent = err instanceof Error ? err.message : "Unexpected error. Please try again.";
+                status.className = "error";
+            } finally {
+                generateBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
